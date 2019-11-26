@@ -1,0 +1,123 @@
+/*
+   4x4 Keypad Interfacing with ATmega16/32
+   http://www.electronicwings.com
+ */ 
+#include "LCD16x2_4bit.h"
+#include <avr/io.h>
+#include <util/delay.h>
+
+#include <stdio.h>
+#include <string.h>
+
+#define KEY_PRT 	PORTA
+#define KEY_DDR		DDRA
+#define KEY_PIN		PINA
+
+char keypad[4][4] = {	{'7','8','9','/'},
+								{'4','5','6','*'},
+								{'1','2','3','-'},
+								{' ','0','=','+'}};
+
+unsigned char colloc, rowloc;
+
+char str[15];
+int index=0;
+
+char keyfind()
+{
+	while(1)
+	{
+		KEY_DDR = 0xF0;           /* set port direction as input-output */
+		KEY_PRT = 0xFF;
+		KEY_PRT &= 0x0F;
+		do
+		{
+			KEY_PRT &= 0x0F;      /* mask PORT for column read only*/ 
+			asm("NOP");
+			colloc = (KEY_PIN & 0x0F); /* read status of column */
+		}while(colloc != 0x0F);
+		
+		do
+		{
+			/*do
+			{
+				_delay_ms(20);             /* 20ms key debounce time 
+				colloc = (KEY_PIN & 0x0F); /* read status of column 
+				}while(colloc == 0x0F);        /* check for any key press */
+				
+				_delay_ms (40);	            /* 20 ms key debounce time */
+				colloc = (KEY_PIN & 0x0F);
+			}while(colloc == 0x0F);
+
+	/* now check for rows */
+		KEY_PRT = 0xEF;            /* check for pressed key in 1st row */
+		asm("NOP");
+		colloc = (KEY_PIN & 0x0F);
+		if(colloc != 0x0F)
+		{
+			rowloc = 0;
+			break;
+		}
+
+		KEY_PRT = 0xDF;			  /* check for pressed key in 2nd row */
+		asm("NOP");
+		colloc = (KEY_PIN & 0x0F);
+		if(colloc != 0x0F)
+		{
+			rowloc = 1;
+			break;
+		}
+		
+		KEY_PRT = 0xBF;			  /* check for pressed key in 3rd row */
+		asm("NOP");
+		colloc = (KEY_PIN & 0x0F);
+		if(colloc != 0x0F)
+		{
+			rowloc = 2;
+			break;
+		}
+
+		KEY_PRT = 0x7F;			  /* check for pressed key in 4th row */
+		asm("NOP");
+		colloc = (KEY_PIN & 0x0F);
+		if(colloc != 0x0F)
+		{
+			rowloc = 3;
+			break;
+		}
+	}
+
+	if(colloc == 0x0E){
+		//strncat(str,&keypad[rowloc][0],1);
+		str[index]=keypad[rowloc][0];
+		index++;
+		return(keypad[rowloc][0]);}
+	else if(colloc == 0x0D){
+		//strncat(str,&keypad[rowloc][1],1);
+		str[index]=keypad[rowloc][1];
+		index++;
+		return(keypad[rowloc][1]);}
+	else if(colloc == 0x0B){
+		//strncat(str,&keypad[rowloc][2],1);
+		str[index]=keypad[rowloc][2];
+		index++;
+		return(keypad[rowloc][2]);}
+	else{
+		//strncat(str,&keypad[rowloc][3],1);
+		str[index]=keypad[rowloc][3];
+		index++;
+		return(keypad[rowloc][3]);}
+}
+
+int main(void)
+{
+	LCD_Init();
+	
+
+    while(1)
+	{
+		LCD_String_xy(1,0,str);
+		LCD_Command(0xc0);
+		keyfind();
+	}
+}
